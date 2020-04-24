@@ -5,6 +5,7 @@
     <groupId>nl.praegus</groupId>
     <artifactId>toolchain-azuredevops-runlistener</artifactId>
     <url>https://github.com/praegus/azuredevops-fitnesse-junit-runner</url>
+    <name>Praegus Toolchain AzureDevops Testrun Listener</name>
     <description>A runlistener to report FitNesse Test runs to AzureDevops</description>
     <version>1.2-SNAPSHOT</version>
 
