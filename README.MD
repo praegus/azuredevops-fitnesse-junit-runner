@@ -26,17 +26,7 @@ This is a Junit RunListener for use with FitNesse projects that use HsacFitNesse
 ```
 Run your JUnit test class using `AzureDevopsJunitRunner`
 
-Add a file `azureTestRun.properties` to your projects resources with the following properties:
-```
-azure.testrun=The name you want to give to the test run
-azure.organization=Your ORG name in AzureDevops
-```
-These properties can also be set using:
-1. Environment varables
-2. System properties (i.e. start test with -Dazure.testrun=MyTestRun)
-
-In your pipeline: expose the internal accesstoken, project ID and build ID to maven's environment (see example for naming).
-Example maven step:
+In your pipeline: set the necessary environment variables to configure the listener:
 ``` 
 steps:
 - task: Maven@3
@@ -44,6 +34,8 @@ steps:
     SYSTEM_ACCESSTOKEN: $(System.AccessToken)
     SYSTEM_PROJECT: $(System.TeamProject)
     BUILD_ID: $(Build.BuildId)
+    azure.testrun: 'FitNesse Test Run'
+    azure.organization: 'My-Azure-Org'
   inputs:
     mavenPomFile: 'pom.xml'
     mavenOptions: '-Xmx3072m'
@@ -52,3 +44,8 @@ steps:
     jdkArchitectureOption: 'x64'
     goals: 'test-compile failsafe:integration-test -DfitnesseSuiteToRun=MyFitnesseTestSuite'
 ```
+
+The configuration properties can also be set using:
+1. System properties (i.e. start test with -Dazure.testrun=MyTestRun)
+2. A properrties file in your projects resources
+
