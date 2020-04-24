@@ -6,7 +6,7 @@
     <artifactId>toolchain-azuredevops-runlistener</artifactId>
     <url>https://github.com/praegus/azuredevops-fitnesse-junit-runner</url>
     <description>A runlistener to report FitNesse Test runs to AzureDevops</description>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.1</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -112,7 +112,7 @@
         <connection>scm:git:git@github.com:praegus/azuredevops-fitnesse-junit-runner.git</connection>
         <url>https://github.com/praegus/azuredevops-fitnesse-junit-runner.git</url>
         <developerConnection>scm:git:git@github.com:praegus/azuredevops-fitnesse-junit-runner.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>toolchain-azuredevops-runlistener-1.1</tag>
     </scm>
 
     <profiles>
