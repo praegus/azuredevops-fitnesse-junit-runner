@@ -16,9 +16,9 @@ import static java.util.Objects.requireNonNull;
 import static nl.praegus.fitnesse.junit.azuredevops.util.Description.getTestName;
 
 public class AzureDevopsRunListener extends RunListener {
-    private final String PROP_TESTRUN = "azure.testrun";
+    private final String PROP_TESTRUN = "AZURE_TESTRUN";
     private final String PROP_TOKEN = "SYSTEM_ACCESSTOKEN";
-    private final String PROP_ORG = "azure.organization";
+    private final String PROP_ORG = "AZURE_ORGANIZATION";
     private final String PROP_PROJECT = "SYSTEM_PROJECT";
     private final String propertyFileName = "azureTestRun.properties";
 
