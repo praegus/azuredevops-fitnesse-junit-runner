@@ -1,3 +1,4 @@
+[![Maven Central](https://img.shields.io/maven-central/v/nl.praegus/toolchain-azuredevops-runlistener.svg?maxAge=21600)](https://mvnrepository.com/artifact/nl.praegus/toolchain-azuredevops-runlistener)
 # FitNesse Junit run listener for AzureDevOps
 
 ### High level
