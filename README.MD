@@ -20,7 +20,7 @@ This is a Junit RunListener for use with FitNesse projects that use HsacFitNesse
  <dependency>
     <groupId>nl.praegus</groupId>
     <artifactId>toolchain-azuredevops-runlistener</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -34,8 +34,8 @@ steps:
     SYSTEM_ACCESSTOKEN: $(System.AccessToken)
     SYSTEM_PROJECT: $(System.TeamProject)
     BUILD_ID: $(Build.BuildId)
-    azure.testrun: 'FitNesse Test Run'
-    azure.organization: 'My-Azure-Org'
+    AZURE_TESTRUN: 'FitNesse Test Run'
+    AZURE_ORGANIZATION: 'My-Azure-Org'
   inputs:
     mavenPomFile: 'pom.xml'
     mavenOptions: '-Xmx3072m'
@@ -46,6 +46,7 @@ steps:
 ```
 
 The configuration properties can also be set using:
-1. System properties (i.e. start test with -Dazure.testrun=MyTestRun)
-2. A properrties file in your projects resources
+1. AzureDevOps variables (preferred)
+2. System properties (i.e. start test with -Dazure.testrun=MyTestRun)
+3. A properties file in your projects resources
 
