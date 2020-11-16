@@ -6,7 +6,7 @@ import nl.praegus.azuredevops.javaclient.test.api.*;
 public class AzureDevopsTestRunClientHelper {
 
 
-    private ApiClient client = new ApiClient();
+    private final ApiClient client;
     private TestPlansApi testPlansApi;
     private TestCasesApi testCasesApi;
     private RunsApi runsApi;
@@ -16,7 +16,16 @@ public class AzureDevopsTestRunClientHelper {
     private TestSuitesApi suitesApi;
 
 
-    public AzureDevopsTestRunClientHelper(String token) {
+    public AzureDevopsTestRunClientHelper(String token, String baseUrl) {
+        if(baseUrl == null) {
+            client = new ApiClient();
+        } else {
+            client = new ApiClient().setBasePath(baseUrl);
+        }
+        configureClient(token);
+    }
+
+    private void configureClient(String token) {
         client.setUsername(token);
         client.setPassword(token);
 

@@ -39,10 +39,10 @@ public class AzureDevopsReporter {
     private static final Pattern PAGESOURCE_PATTERN = Pattern.compile("href=\"([^\"]*." + PAGESOURCE_EXT + ")\"");
 
 
-    public AzureDevopsReporter(String token, String organization, String project) {
+    public AzureDevopsReporter(String token, String organization, String project, String basePath) {
         this.org = organization;
         this.project = project;
-        azure = new AzureDevopsTestRunClientHelper(token);
+        azure = new AzureDevopsTestRunClientHelper(token, basePath);
     }
 
     public TestRun startTestRun(String name) throws ApiException {

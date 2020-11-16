@@ -20,6 +20,7 @@ public class AzureDevopsRunListener extends RunListener {
     private final String PROP_TOKEN = "SYSTEM_ACCESSTOKEN";
     private final String PROP_ORG = "AZURE_ORGANIZATION";
     private final String PROP_PROJECT = "SYSTEM_PROJECT";
+    private final String PROP_BASEPATH = "BASE_URL";
     private final String propertyFileName = "azureTestRun.properties";
 
     private TimeMeasurement timeMeasurement;
@@ -43,7 +44,7 @@ public class AzureDevopsRunListener extends RunListener {
 
     private void startRunIfRequired() throws ApiException {
         if (reporter == null) {
-            reporter = new AzureDevopsReporter(getProperty(PROP_TOKEN), getProperty(PROP_ORG), getProperty(PROP_PROJECT));
+            reporter = new AzureDevopsReporter(getProperty(PROP_TOKEN), getProperty(PROP_ORG), getProperty(PROP_PROJECT), getProperty(PROP_BASEPATH));
         }
         if (testRun == null) {
             runTimeMeasurement = new TimeMeasurement().start();
@@ -101,7 +102,9 @@ public class AzureDevopsRunListener extends RunListener {
             propertyFile.load(requireNonNull(AzureDevopsRunListener.class.getClassLoader().getResourceAsStream(this.propertyFileName)));
             return propertyFile.getProperty(key);
         } catch (NullPointerException | IOException e) {
-            System.err.println("No value was found for: " + key);
+            if (!key.equals(PROP_BASEPATH)) {
+                System.err.println("No value was found for: " + key);
+            }
             return null;
         }
     }
