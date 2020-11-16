@@ -1,3 +1,4 @@
+[![Maven Central](https://img.shields.io/maven-central/v/nl.praegus/toolchain-azuredevops-runlistener.svg?maxAge=21600)](https://mvnrepository.com/artifact/nl.praegus/toolchain-azuredevops-runlistener)
 # FitNesse Junit run listener for AzureDevOps
 
 ### High level
@@ -44,6 +45,10 @@ steps:
     jdkArchitectureOption: 'x64'
     goals: 'test-compile failsafe:integration-test -DfitnesseSuiteToRun=MyFitnesseTestSuite'
 ```
+
+Allow your job access to the OAuth access token:
+
+![image](https://user-images.githubusercontent.com/2232710/91286399-b36f2780-e78e-11ea-9dcf-85307e2b5092.png)
 
 The configuration properties can also be set using:
 1. AzureDevOps variables (preferred)
