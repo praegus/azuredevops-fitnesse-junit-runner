@@ -21,7 +21,7 @@ This is a Junit RunListener for use with FitNesse projects that use HsacFitNesse
  <dependency>
     <groupId>nl.praegus</groupId>
     <artifactId>toolchain-azuredevops-runlistener</artifactId>
-    <version>1.0.2</version>
+    <version>${azuredevops.runlistener.version}</version>
     <scope>test</scope>
 </dependency>
 ```
