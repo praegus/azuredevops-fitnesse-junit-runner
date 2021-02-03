@@ -49,7 +49,7 @@ steps:
     goals: 'test-compile failsafe:integration-test -DfitnesseSuiteToRun=MyFitnesseTestSuite'
 ```
 
-Allow your job access to the OAuth access token:
+When using classic pipelines (not yaml): Allow your job access to the OAuth access token:
 
 ![image](https://user-images.githubusercontent.com/2232710/91286399-b36f2780-e78e-11ea-9dcf-85307e2b5092.png)
 
