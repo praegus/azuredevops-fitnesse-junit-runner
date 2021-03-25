@@ -74,7 +74,7 @@ public class AzureDevopsRunListener extends RunListener {
 
     @Override
     public void testRunFinished(Result result) throws Exception {
-        reporter.finishTestRun(testRun, resultCount, result.getFailureCount(), getExecutionTimeInMs(runTimeMeasurement));
+        reporter.finishTestRun(testRun, resultCount, result.getFailureCount());
     }
 
 

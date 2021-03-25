@@ -18,14 +18,14 @@ import java.io.Closeable;
 public class StandaloneHtmlListener implements TestSystemListener, Closeable {
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(StandaloneHtmlListener.class);
     private static StringBuilder output;
-    private PlainHtmlChunkParser parser = new PlainHtmlChunkParser();
+    private static String lastSummary;
+    private final PlainHtmlChunkParser parser = new PlainHtmlChunkParser();
 
     public static String getOutput() {
         if (output == null) {
             return "";
         }
-        String outputString = output.toString();
-        return outputString;
+        return output.toString();
     }
 
     @Override
@@ -50,6 +50,7 @@ public class StandaloneHtmlListener implements TestSystemListener, Closeable {
     @Override
     public void testComplete(TestPage testPage, TestSummary testSummary) {
         parser.finalizeStandalonePage(output);
+        lastSummary = testSummary.toString();
     }
 
     @Override
@@ -70,5 +71,11 @@ public class StandaloneHtmlListener implements TestSystemListener, Closeable {
     @Override
     public void close() {
         // niet nodig voor het html bestand
+    }
+
+    public static String getLastSummary() {
+        String last = lastSummary;
+        lastSummary = "";
+        return last;
     }
 }

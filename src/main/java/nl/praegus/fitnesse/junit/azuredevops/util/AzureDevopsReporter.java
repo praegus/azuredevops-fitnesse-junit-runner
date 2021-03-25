@@ -4,7 +4,13 @@ import com.overzealous.remark.Remark;
 import net.lingala.zip4j.ZipFile;
 import nl.hsac.fitnesse.fixture.Environment;
 import nl.praegus.azuredevops.javaclient.test.ApiException;
-import nl.praegus.azuredevops.javaclient.test.model.*;
+import nl.praegus.azuredevops.javaclient.test.model.RunCreateModel;
+import nl.praegus.azuredevops.javaclient.test.model.RunSummaryModel;
+import nl.praegus.azuredevops.javaclient.test.model.RunUpdateModel;
+import nl.praegus.azuredevops.javaclient.test.model.ShallowReference;
+import nl.praegus.azuredevops.javaclient.test.model.TestAttachmentRequestModel;
+import nl.praegus.azuredevops.javaclient.test.model.TestCaseResult;
+import nl.praegus.azuredevops.javaclient.test.model.TestRun;
 import org.apache.commons.io.IOUtils;
 import org.junit.runner.Description;
 import org.threeten.bp.OffsetDateTime;
@@ -26,12 +32,11 @@ import static nl.praegus.fitnesse.junit.azuredevops.util.Description.getFullTest
 import static nl.praegus.fitnesse.junit.azuredevops.util.Description.getTestName;
 
 public class AzureDevopsReporter {
-    private static final String propertyFileName = "azureTestRun.properties";
 
-    private AzureDevopsTestRunClientHelper azure;
-    private String org;
-    private String project;
-    private String apiVersion = "5.0-preview";
+    private final AzureDevopsTestRunClientHelper azure;
+    private final String org;
+    private final String project;
+    private final String apiVersion = "5.0-preview";
 
     private static final String SCREENSHOT_EXT = "png";
     private static final String PAGESOURCE_EXT = "html";
@@ -58,7 +63,7 @@ public class AzureDevopsReporter {
     }
 
     public void reportTestPassed(Description description, TestRun run, Double executionTime) throws ApiException {
-        TestCaseResult result = completedTestCaseBase(description, run, executionTime);
+        TestCaseResult result = completedTestCaseBase(description, executionTime);
         result.setOutcome("Passed");
         List<TestCaseResult> testCaseResults = azure.getResultsApi().resultsAdd(org, Collections.singletonList(result), project, run.getId(), apiVersion);
 
@@ -66,8 +71,14 @@ public class AzureDevopsReporter {
     }
 
     public void reportTestFailed(Description description, Throwable exception, TestRun run, Double executionTime) throws ApiException {
-        String errorMsg = exception.getMessage().contains("</") ? new Remark().convert(exception.getMessage()): exception.getMessage();
-        TestCaseResult result = completedTestCaseBase(description, run, executionTime);
+        String errorMsg;
+        if (null != exception.getMessage()) {
+            errorMsg = exception.getMessage().contains("</") ? new Remark().convert(exception.getMessage()) : exception.getMessage();
+        } else {
+            errorMsg = exception.getClass().getSimpleName();
+        }
+
+        TestCaseResult result = completedTestCaseBase(description, executionTime);
 
         result.setOutcome("Failed");
         result.setErrorMessage(errorMsg);
@@ -83,7 +94,7 @@ public class AzureDevopsReporter {
 
     }
 
-    private TestCaseResult completedTestCaseBase(Description description, TestRun run, Double executionTime) {
+    private TestCaseResult completedTestCaseBase(Description description, Double executionTime) {
         OffsetDateTime now = OffsetDateTime.now();
         TestCaseResult result = new TestCaseResult();
         result.setTestCaseTitle(getTestName(description));
@@ -92,6 +103,7 @@ public class AzureDevopsReporter {
         result.setStartedDate(now.minusNanos(executionTime.longValue() * 1000000));
         result.setCompletedDate(now);
         result.setState("Completed");
+        result.setComment(StandaloneHtmlListener.getLastSummary());
         result.setBuild(new ShallowReference().id(System.getenv("BUILD_ID")));
         return result;
     }
@@ -139,7 +151,7 @@ public class AzureDevopsReporter {
 
     }
 
-    public void finishTestRun(TestRun testRun, int resultCount, int failCount, Double executionTime) throws Exception {
+    public void finishTestRun(TestRun testRun, int resultCount, int failCount) throws Exception {
         RunUpdateModel run = new RunUpdateModel();
         List<RunSummaryModel> stats = new ArrayList<>();
         stats.add(new RunSummaryModel().testOutcome(RunSummaryModel.TestOutcomeEnum.PASSED).resultCount(resultCount));
