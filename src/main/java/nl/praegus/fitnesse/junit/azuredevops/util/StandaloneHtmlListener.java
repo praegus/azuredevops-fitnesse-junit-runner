@@ -1,9 +1,16 @@
 package nl.praegus.fitnesse.junit.azuredevops.util;
 
+import fitnesse.testrunner.WikiTestPage;
 import fitnesse.testsystems.*;
+import fitnesse.wiki.PageData;
+import fitnesse.wiki.WikiPageProperty;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * TestSystemListener that keeps a static StringBuilder for the running testcase
@@ -19,6 +26,7 @@ public class StandaloneHtmlListener implements TestSystemListener, Closeable {
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(StandaloneHtmlListener.class);
     private static StringBuilder output;
     private static String lastSummary;
+    private static String[] currentTags;
     private final PlainHtmlChunkParser parser = new PlainHtmlChunkParser();
 
     public static String getOutput() {
@@ -43,6 +51,14 @@ public class StandaloneHtmlListener implements TestSystemListener, Closeable {
 
     @Override
     public void testStarted(TestPage testPage) {
+        currentTags = new String[]{};
+        if (testPage instanceof WikiTestPage) {
+            PageData pageData = ((WikiTestPage) testPage).getData();
+
+            if (pageData.getAttribute(WikiPageProperty.SUITES) != null) {
+                currentTags = pageData.getAttribute(WikiPageProperty.SUITES).split("\\s*[;,]\\s*");
+            }
+        }
         output = new StringBuilder();
         output.append(parser.initializeStandalonePage(testPage.getFullPath()));
     }
@@ -77,5 +93,9 @@ public class StandaloneHtmlListener implements TestSystemListener, Closeable {
         String last = lastSummary;
         lastSummary = "";
         return last;
+    }
+
+    public static String[] getCurrentTags() {
+        return currentTags;
     }
 }

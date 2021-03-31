@@ -30,6 +30,9 @@ import java.util.regex.Pattern;
 
 import static nl.praegus.fitnesse.junit.azuredevops.util.Description.getFullTestName;
 import static nl.praegus.fitnesse.junit.azuredevops.util.Description.getTestName;
+import static nl.praegus.fitnesse.junit.azuredevops.util.StandaloneHtmlListener.getCurrentTags;
+import static nl.praegus.fitnesse.junit.azuredevops.util.StandaloneHtmlListener.getLastSummary;
+import static nl.praegus.fitnesse.junit.azuredevops.util.StandaloneHtmlListener.getOutput;
 
 public class AzureDevopsReporter {
 
@@ -37,6 +40,7 @@ public class AzureDevopsReporter {
     private final String org;
     private final String project;
     private final String apiVersion = "5.0-preview";
+    private final boolean logTags;
 
     private static final String SCREENSHOT_EXT = "png";
     private static final String PAGESOURCE_EXT = "html";
@@ -44,9 +48,11 @@ public class AzureDevopsReporter {
     private static final Pattern PAGESOURCE_PATTERN = Pattern.compile("href=\"([^\"]*." + PAGESOURCE_EXT + ")\"");
 
 
-    public AzureDevopsReporter(String token, String organization, String project, String basePath) {
+    public AzureDevopsReporter(String token, String organization, String project, String basePath, boolean logTags) {
         this.org = organization;
         this.project = project;
+        this.logTags = logTags;
+
         azure = new AzureDevopsTestRunClientHelper(token, basePath);
     }
 
@@ -67,7 +73,7 @@ public class AzureDevopsReporter {
         result.setOutcome("Passed");
         List<TestCaseResult> testCaseResults = azure.getResultsApi().resultsAdd(org, Collections.singletonList(result), project, run.getId(), apiVersion);
 
-        addTestResultAttachment(run.getId(), testCaseResults.get(0).getId(), new String(Base64.getEncoder().encode(StandaloneHtmlListener.getOutput().getBytes())), getTestName(description) + ".html");
+        addTestResultAttachment(run.getId(), testCaseResults.get(0).getId(), new String(Base64.getEncoder().encode(getOutput().getBytes())), getTestName(description) + ".html");
     }
 
     public void reportTestFailed(Description description, Throwable exception, TestRun run, Double executionTime) throws ApiException {
@@ -81,7 +87,7 @@ public class AzureDevopsReporter {
         TestCaseResult result = completedTestCaseBase(description, executionTime);
 
         result.setOutcome("Failed");
-        result.setErrorMessage(errorMsg);
+        result.setErrorMessage(result.getErrorMessage() != null ? result.getErrorMessage() + " " + errorMsg : errorMsg);
 
         List<TestCaseResult> testCaseResults = azure.getResultsApi().resultsAdd(org, Collections.singletonList(result), project, run.getId(), apiVersion);
 
@@ -90,7 +96,7 @@ public class AzureDevopsReporter {
         patterns.add(PAGESOURCE_PATTERN);
         processFailedTestAttachments(exception, patterns, run.getId(), testCaseResults.get(0).getId());
 
-        addTestResultAttachment(run.getId(), testCaseResults.get(0).getId(), new String(Base64.getEncoder().encode(StandaloneHtmlListener.getOutput().getBytes())), getTestName(description) + ".html");
+        addTestResultAttachment(run.getId(), testCaseResults.get(0).getId(), new String(Base64.getEncoder().encode(getOutput().getBytes())), getTestName(description) + ".html");
 
     }
 
@@ -103,8 +109,11 @@ public class AzureDevopsReporter {
         result.setStartedDate(now.minusNanos(executionTime.longValue() * 1000000));
         result.setCompletedDate(now);
         result.setState("Completed");
-        result.setComment(StandaloneHtmlListener.getLastSummary());
+        result.setComment(getLastSummary());
         result.setBuild(new ShallowReference().id(System.getenv("BUILD_ID")));
+        if (logTags && getCurrentTags().length > 0) {
+            result.setErrorMessage("[" + String.join(", ", getCurrentTags()) + "]");
+        }
         return result;
     }
 

@@ -29,7 +29,9 @@ Run your JUnit test class using `AzureDevopsJunitRunner`
 
 In your pipeline: set the necessary environment variables to configure the listener.
 These can be set using environment vars in pipeline scripts, or through the variables view. Testrun, Org and basepath 
-can be set from a properties file (azureTestRun.properties). BASE_URL is optional and defaults to https://dev.azure.com
+can be set from a properties file (azureTestRun.properties). 
+BASE_URL is optional and defaults to https://dev.azure.com
+AZURE_LOG_TAGS is optional and is only set when logging tags to the error message field is desired
 ``` 
 steps:
 - task: Maven@3
@@ -40,6 +42,7 @@ steps:
     AZURE_TESTRUN: 'FitNesse Test Run'
     AZURE_ORGANIZATION: 'My-Azure-Org'
     BASE_URL: 'https://dev.azure.com'
+    AZURE_LOG_TAGS: 'true'
   inputs:
     mavenPomFile: 'pom.xml'
     mavenOptions: '-Xmx3072m'

@@ -16,15 +16,15 @@ import static java.util.Objects.requireNonNull;
 import static nl.praegus.fitnesse.junit.azuredevops.util.Description.getTestName;
 
 public class AzureDevopsRunListener extends RunListener {
-    private final String PROP_TESTRUN = "AZURE_TESTRUN";
-    private final String PROP_TOKEN = "SYSTEM_ACCESSTOKEN";
-    private final String PROP_ORG = "AZURE_ORGANIZATION";
-    private final String PROP_PROJECT = "SYSTEM_PROJECT";
-    private final String PROP_BASEPATH = "BASE_URL";
-    private final String propertyFileName = "azureTestRun.properties";
+    private static final String PROP_TESTRUN = "AZURE_TESTRUN";
+    private static final String PROP_TOKEN = "SYSTEM_ACCESSTOKEN";
+    private static final String PROP_ORG = "AZURE_ORGANIZATION";
+    private static final String PROP_PROJECT = "SYSTEM_PROJECT";
+    private static final String PROP_BASEPATH = "BASE_URL";
+    private static final String PROP_LOGTAGS = "AZURE_LOG_TAGS";
+    private static final String PROPERTY_FILE_NAME = "azureTestRun.properties";
 
     private TimeMeasurement timeMeasurement;
-    private TimeMeasurement runTimeMeasurement;
     private AzureDevopsReporter reporter;
 
     private int resultCount = 0;
@@ -44,10 +44,9 @@ public class AzureDevopsRunListener extends RunListener {
 
     private void startRunIfRequired() throws ApiException {
         if (reporter == null) {
-            reporter = new AzureDevopsReporter(getProperty(PROP_TOKEN), getProperty(PROP_ORG), getProperty(PROP_PROJECT), getProperty(PROP_BASEPATH));
+            reporter = new AzureDevopsReporter(getProperty(PROP_TOKEN), getProperty(PROP_ORG), getProperty(PROP_PROJECT), getProperty(PROP_BASEPATH), logTags());
         }
         if (testRun == null) {
-            runTimeMeasurement = new TimeMeasurement().start();
             testRun = reporter.startTestRun(getProperty(PROP_TESTRUN));
         }
     }
@@ -89,6 +88,11 @@ public class AzureDevopsRunListener extends RunListener {
         return executionTime * 1000;
     }
 
+    private boolean logTags() {
+        String logTagsValue = getProperty(PROP_LOGTAGS);
+        return logTagsValue != null && logTagsValue.equalsIgnoreCase("true");
+    }
+
     private String getProperty(String key) {
         if (System.getenv(key) != null) {
             return System.getenv(key);
@@ -99,7 +103,7 @@ public class AzureDevopsRunListener extends RunListener {
 
         Properties propertyFile = new Properties();
         try {
-            propertyFile.load(requireNonNull(AzureDevopsRunListener.class.getClassLoader().getResourceAsStream(this.propertyFileName)));
+            propertyFile.load(requireNonNull(AzureDevopsRunListener.class.getClassLoader().getResourceAsStream(PROPERTY_FILE_NAME)));
             return propertyFile.getProperty(key);
         } catch (NullPointerException | IOException e) {
             if (!key.equals(PROP_BASEPATH)) {
