@@ -1,6 +1,6 @@
 package nl.praegus.fitnesse.junit.azuredevops.util;
 
-import com.overzealous.remark.Remark;
+import fitnesse.testsystems.TestPage;
 import net.lingala.zip4j.ZipFile;
 import nl.hsac.fitnesse.fixture.Environment;
 import nl.praegus.azuredevops.javaclient.test.ApiException;
@@ -12,7 +12,6 @@ import nl.praegus.azuredevops.javaclient.test.model.TestAttachmentRequestModel;
 import nl.praegus.azuredevops.javaclient.test.model.TestCaseResult;
 import nl.praegus.azuredevops.javaclient.test.model.TestRun;
 import org.apache.commons.io.IOUtils;
-import org.junit.runner.Description;
 import org.threeten.bp.OffsetDateTime;
 
 import java.io.File;
@@ -22,16 +21,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static nl.praegus.fitnesse.junit.azuredevops.util.Description.getFullTestName;
-import static nl.praegus.fitnesse.junit.azuredevops.util.Description.getTestName;
-import static nl.praegus.fitnesse.junit.azuredevops.util.StandaloneHtmlListener.getCurrentTags;
-import static nl.praegus.fitnesse.junit.azuredevops.util.StandaloneHtmlListener.getLastSummary;
 import static nl.praegus.fitnesse.junit.azuredevops.util.StandaloneHtmlListener.getOutput;
 
 public class AzureDevopsReporter {
@@ -40,7 +36,9 @@ public class AzureDevopsReporter {
     private final String org;
     private final String project;
     private final String apiVersion = "5.0-preview";
-    private final boolean logTags;
+    public final boolean logTags;
+
+    private final AzureDevopsRunContext context;
 
     private static final String SCREENSHOT_EXT = "png";
     private static final String PAGESOURCE_EXT = "html";
@@ -52,8 +50,13 @@ public class AzureDevopsReporter {
         this.org = organization;
         this.project = project;
         this.logTags = logTags;
+        this.context = new AzureDevopsRunContext();
 
         azure = new AzureDevopsTestRunClientHelper(token, basePath);
+    }
+
+    public AzureDevopsRunContext context() {
+        return context;
     }
 
     public TestRun startTestRun(String name) throws ApiException {
@@ -68,59 +71,61 @@ public class AzureDevopsReporter {
         return azure.getRunsApi().runsCreate(org, run, project, apiVersion);
     }
 
-    public void reportTestPassed(Description description, TestRun run, Double executionTime) throws ApiException {
-        TestCaseResult result = completedTestCaseBase(description, executionTime);
-        result.setOutcome("Passed");
-        List<TestCaseResult> testCaseResults = azure.getResultsApi().resultsAdd(org, Collections.singletonList(result), project, run.getId(), apiVersion);
-
-        addTestResultAttachment(run.getId(), testCaseResults.get(0).getId(), new String(Base64.getEncoder().encode(getOutput().getBytes())), getTestName(description) + ".html");
-    }
-
-    public void reportTestFailed(Description description, Throwable exception, TestRun run, Double executionTime) throws ApiException {
-        String errorMsg;
-        if (null != exception.getMessage()) {
-            errorMsg = exception.getMessage().contains("</") ? new Remark().convert(exception.getMessage()) : exception.getMessage();
-        } else {
-            errorMsg = exception.getClass().getSimpleName();
-        }
-
-        TestCaseResult result = completedTestCaseBase(description, executionTime);
-
-        result.setOutcome("Failed");
-        result.setErrorMessage(result.getErrorMessage() != null ? result.getErrorMessage() + " " + errorMsg : errorMsg);
-
-        List<TestCaseResult> testCaseResults = azure.getResultsApi().resultsAdd(org, Collections.singletonList(result), project, run.getId(), apiVersion);
-
-        List<Pattern> patterns = new ArrayList<>();
-        patterns.add(SCREENSHOT_PATTERN);
-        patterns.add(PAGESOURCE_PATTERN);
-        processFailedTestAttachments(exception, patterns, run.getId(), testCaseResults.get(0).getId());
-
-        addTestResultAttachment(run.getId(), testCaseResults.get(0).getId(), new String(Base64.getEncoder().encode(getOutput().getBytes())), getTestName(description) + ".html");
-
-    }
-
-    private TestCaseResult completedTestCaseBase(Description description, Double executionTime) {
-        OffsetDateTime now = OffsetDateTime.now();
+    public int reportTestStarted(TestPage testPage, TestRun run) {
         TestCaseResult result = new TestCaseResult();
-        result.setTestCaseTitle(getTestName(description));
-        result.setAutomatedTestName(getFullTestName(description));
-        result.setDurationInMs(executionTime);
-        result.setStartedDate(now.minusNanos(executionTime.longValue() * 1000000));
-        result.setCompletedDate(now);
-        result.setState("Completed");
-        result.setComment(getLastSummary());
+        result.setTestCaseTitle(TestPageHelper.getTestName(testPage));
+        result.setAutomatedTestName(TestPageHelper.getFullTestName(testPage));
+        result.setStartedDate(OffsetDateTime.now());
+        result.setState("InProgress");
         result.setBuild(new ShallowReference().id(System.getenv("BUILD_ID")));
-        if (logTags && getCurrentTags().length > 0) {
-            result.setErrorMessage("[" + String.join(", ", getCurrentTags()) + "]");
+
+        try {
+            List<TestCaseResult> testCaseResults = azure.getResultsApi().resultsAdd(org, Collections.singletonList(result), project, run.getId(), apiVersion);
+            return testCaseResults.get(0).getId();
+        } catch (ApiException e) {
+            System.err.println("Error starting test in Azure Devops: " + e.getMessage());
         }
-        return result;
+        return -1;
     }
 
-    private void processFailedTestAttachments(Throwable ex, List<Pattern> patterns, int runId, int testResultId) throws ApiException {
-        if (null != ex.getMessage()) {
+    public void reportTestFinished(TestPage testPage, TestRun run, AzureDevopsRunContext.TestResult testResult, String outcome) {
+        TestCaseResult result = new TestCaseResult();
+        result.setId(testResult.getId());
+        result.setCompletedDate(OffsetDateTime.now());
+
+        result.setOutcome(outcome);
+        result.setDurationInMs(testResult.durationInMs());
+        result.setErrorMessage(testResult.getErrorMessage());
+        result.setState("Completed");
+
+        try {
+            addTestResultAttachment(run.getId(), testResult.getId(), new String(Base64.getEncoder().encode(getOutput().getBytes())), TestPageHelper.getTestName(testPage) + ".html");
+            azure.getResultsApi().resultsUpdate(org, Collections.singletonList(result), project, run.getId(), apiVersion);
+        } catch (ApiException e) {
+            System.err.println("Error finishing test in Azure Devops: " + e.getMessage());
+        }
+        context.updateCounters(outcome);
+    }
+
+    public void reportException(TestRun run, int testResultId, String message) {
+        TestCaseResult result = new TestCaseResult();
+        result.setId(testResultId);
+        result.setErrorMessage(message);
+        result.setOutcome("Error");
+
+        try {
+            azure.getResultsApi().resultsUpdate(org, Collections.singletonList(result), project, run.getId(), apiVersion);
+            processFailedTestAttachments(message, Arrays.asList(SCREENSHOT_PATTERN, PAGESOURCE_PATTERN), run.getId(), testResultId);
+        } catch (ApiException e) {
+            System.err.println("Error writing exception message: " + e.getMessage());
+        }
+    }
+
+
+    private void processFailedTestAttachments(String message, List<Pattern> patterns, int runId, int testResultId) throws ApiException {
+        if (null != message) {
             for (Pattern pattern : patterns) {
-                Matcher patternMatcher = pattern.matcher(ex.getMessage());
+                Matcher patternMatcher = pattern.matcher(message);
                 if (patternMatcher.find()) {
                     String filePath = Environment.getInstance().getFitNesseRootDir() + "/" + patternMatcher.group(1);
                     attachFromFileSystem(filePath, runId, testResultId);
@@ -133,6 +138,7 @@ public class AzureDevopsReporter {
         TestAttachmentRequestModel attachment = new TestAttachmentRequestModel();
         attachment.attachmentType("TmiTestResultDetail");
         attachment.fileName(filename);
+        attachment.comment(filename);
         attachment.stream(base64encodedFileContent);
 
         azure.getAttachmentsApi().attachmentsCreateTestResultAttachment(org, attachment, project, runId, testResultId, apiVersion);
@@ -142,6 +148,7 @@ public class AzureDevopsReporter {
         TestAttachmentRequestModel attachment = new TestAttachmentRequestModel();
         attachment.attachmentType("TmiTestRunSummary");
         attachment.fileName(filename);
+        attachment.comment("Zip containing all test results for this run");
         attachment.stream(base64encodedFileContent);
         azure.getAttachmentsApi().attachmentsCreateTestRunAttachment(org, attachment, project, runId, apiVersion);
     }
@@ -155,16 +162,18 @@ public class AzureDevopsReporter {
             data = Files.readAllBytes(path);
             addTestResultAttachment(runId, testResultId, new String(Base64.getEncoder().encode(data)), filename);
         } catch (IOException e) {
-            System.err.println("file not found: " + path.toString());
+            System.err.println("file not found: " + path);
         }
 
     }
 
-    public void finishTestRun(TestRun testRun, int resultCount, int failCount) throws Exception {
+    public void finishTestRun(TestRun testRun) throws Exception {
         RunUpdateModel run = new RunUpdateModel();
         List<RunSummaryModel> stats = new ArrayList<>();
-        stats.add(new RunSummaryModel().testOutcome(RunSummaryModel.TestOutcomeEnum.PASSED).resultCount(resultCount));
-        stats.add(new RunSummaryModel().testOutcome(RunSummaryModel.TestOutcomeEnum.FAILED).resultCount(failCount));
+        stats.add(new RunSummaryModel().testOutcome(RunSummaryModel.TestOutcomeEnum.PASSED).resultCount(context.passedTestCount));
+        stats.add(new RunSummaryModel().testOutcome(RunSummaryModel.TestOutcomeEnum.FAILED).resultCount(context.failedTestCount));
+        stats.add(new RunSummaryModel().testOutcome(RunSummaryModel.TestOutcomeEnum.ERROR).resultCount(context.erroredTestCount));
+        stats.add(new RunSummaryModel().testOutcome(RunSummaryModel.TestOutcomeEnum.NOTEXECUTED).resultCount(context.skippedTestCount));
 
         run.setSubstate(RunUpdateModel.SubstateEnum.NONE);
         run.setState("Completed");
