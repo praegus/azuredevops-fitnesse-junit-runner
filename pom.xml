@@ -17,13 +17,13 @@
         <dependency>
             <groupId>org.fitnesse</groupId>
             <artifactId>fitnesse</artifactId>
-            <version>20200501</version>
+            <version>20210606</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>nl.hsac</groupId>
             <artifactId>hsac-fitnesse-fixtures</artifactId>
-            <version>4.21.0</version>
+            <version>4.27.3</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

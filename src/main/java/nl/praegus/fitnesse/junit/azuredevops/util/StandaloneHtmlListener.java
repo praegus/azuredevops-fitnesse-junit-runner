@@ -42,7 +42,7 @@ public class StandaloneHtmlListener implements TestSystemListener, Closeable {
     }
 
     @Override
-    public void testOutputChunk(String chunk) {
+    public void testOutputChunk(TestPage testPage, String chunk) {
         if (!chunk.isEmpty()) {
             chunk = parser.embedImages(chunk);
         }
