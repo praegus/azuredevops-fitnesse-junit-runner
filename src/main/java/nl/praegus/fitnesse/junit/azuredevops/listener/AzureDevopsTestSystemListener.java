@@ -117,20 +117,23 @@ public class AzureDevopsTestSystemListener implements TestSystemListener, Closea
 
     @Override
     public void testExceptionOccurred(Assertion assertion, ExceptionResult exceptionResult) {
-        String instructionIfo = assertion.toString();
-        String method = "";
-        String args = "";
+        if (reporter.context().getCurrentTestResult() != null) { //If null, no test was started (Top level SuiteSetUp Exception)
+            String instructionIfo = assertion.toString();
+            String method = "";
+            String args = "";
 
-        Matcher m_method = METHOD_PATTERN.matcher(instructionIfo);
-        if (m_method.matches()) {
-            method = m_method.group(1);
+            Matcher m_method = METHOD_PATTERN.matcher(instructionIfo);
+            if (m_method.matches()) {
+                method = m_method.group(1);
+            }
+            Matcher m_args = ARGS_PATTERN.matcher(instructionIfo);
+            if (m_args.matches()) {
+                args = m_args.group(1);
+            }
+
+            reporter.reportException(testRun, reporter.context().getCurrentTestResult().getId(),
+                    String.format("[%s(%s)] => %s", method, args, exceptionResult.getMessage()));
         }
-        Matcher m_args = ARGS_PATTERN.matcher(instructionIfo);
-        if (m_args.matches()) {
-            args = m_args.group(1);
-        }
-        reporter.reportException(testRun, reporter.context().getCurrentTestResult().getId(),
-                String.format("[%s(%s)] => %s", method, args, exceptionResult.getMessage()));
     }
 
 
