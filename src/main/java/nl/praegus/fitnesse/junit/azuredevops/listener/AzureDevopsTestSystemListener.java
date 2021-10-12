@@ -93,7 +93,7 @@ public class AzureDevopsTestSystemListener implements TestSystemListener, Closea
 
     @Override
     public void testAssertionVerified(Assertion assertion, TestResult testResult) {
-        if (testResult != null && testResult.getExecutionResult() != null) {
+        if (reporter.context().getCurrentTestResult() != null && testResult != null && testResult.getExecutionResult() != null) {
             String resultStr = status(testResult.getExecutionResult());
             if (!resultStr.equalsIgnoreCase("passed")) {
                 String instructionIfo = assertion.toString();
