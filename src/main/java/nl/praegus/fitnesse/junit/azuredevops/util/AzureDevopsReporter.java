@@ -44,14 +44,15 @@ public class AzureDevopsReporter {
     private static final String PAGESOURCE_EXT = "html";
     private static final Pattern SCREENSHOT_PATTERN = Pattern.compile("href=\"([^\"]*." + SCREENSHOT_EXT + ")\"");
     private static final Pattern PAGESOURCE_PATTERN = Pattern.compile("href=\"([^\"]*." + PAGESOURCE_EXT + ")\"");
+    private final String comment;
 
 
-    public AzureDevopsReporter(String token, String organization, String project, String basePath, boolean logTags) {
+    public AzureDevopsReporter(String token, String organization, String project, String basePath, boolean logTags, String comment) {
         this.org = organization;
         this.project = project;
         this.logTags = logTags;
         this.context = new AzureDevopsRunContext();
-
+        this.comment = comment;
         azure = new AzureDevopsTestRunClientHelper(token, basePath);
     }
 
@@ -67,6 +68,7 @@ public class AzureDevopsReporter {
         run.setBuild(new ShallowReference().id(System.getenv("BUILD_ID")));
         run.setAutomated(true);
         run.setType("NoConfigRun");
+        run.setComment(comment);
         run.setRunSummary(Collections.singletonList(summary));
         return azure.getRunsApi().runsCreate(org, run, project, apiVersion);
     }

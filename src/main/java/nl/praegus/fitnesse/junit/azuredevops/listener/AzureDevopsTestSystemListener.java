@@ -37,10 +37,16 @@ public class AzureDevopsTestSystemListener implements TestSystemListener, Closea
 
     private static final Pattern METHOD_PATTERN = Pattern.compile(".*methodName='(.*)'.*", Pattern.DOTALL);
     private static final Pattern ARGS_PATTERN = Pattern.compile(".*args=\\[(.*)].*", Pattern.DOTALL);
-
+    private String comment = "";
     private AzureDevopsReporter reporter;
 
     private TestRun testRun;
+
+    public AzureDevopsTestSystemListener() {}
+
+    public AzureDevopsTestSystemListener(String comment) {
+        this.comment = comment;
+    }
 
     @Override
     public void close() {
@@ -139,7 +145,7 @@ public class AzureDevopsTestSystemListener implements TestSystemListener, Closea
 
     private void startRunIfRequired() {
         if (reporter == null) {
-            reporter = new AzureDevopsReporter(getProperty(PROP_TOKEN), getProperty(PROP_ORG), getProperty(PROP_PROJECT), getProperty(PROP_BASEPATH), logTags());
+            reporter = new AzureDevopsReporter(getProperty(PROP_TOKEN), getProperty(PROP_ORG), getProperty(PROP_PROJECT), getProperty(PROP_BASEPATH), logTags(), comment);
         }
         if (testRun == null) {
             try {
